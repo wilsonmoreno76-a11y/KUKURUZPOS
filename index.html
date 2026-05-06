@@ -7,87 +7,147 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .product-card:active { transform: scale(0.95); }
-        .cart-item { border-bottom: 1px solid #eee; }
+        .active-tab { border-bottom: 4px solid white; font-weight: bold; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans h-screen flex flex-col">
+<body class="bg-gray-100 h-screen flex flex-col">
 
-    <header class="bg-orange-500 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-xl font-bold">🌽 KUKURUZ GOURMET</h1>
-        <div id="clock" class="text-sm font-mono"></div>
+    <header class="bg-orange-600 text-white p-4 flex justify-between items-center shadow-lg">
+        <h1 class="text-xl font-bold">🌽 KUKURUZ POS</h1>
+        <nav class="flex gap-4">
+            <button onclick="showTab('ventas')" id="nav-ventas" class="px-2 py-1 active-tab">VENTAS</button>
+            <button onclick="showTab('admin')" id="nav-admin" class="px-2 py-1">ADMIN</button>
+        </nav>
     </header>
 
-    <div class="flex flex-1 overflow-hidden">
-        <main class="w-2/3 p-4 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-4" id="menu-grid">
-            </main>
+    <div id="tab-ventas" class="flex flex-1 overflow-hidden">
+        <main class="w-2/3 p-4 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="menu-grid">
+            <div class="col-span-full text-center py-10 text-gray-500">Cargando menú desde el Excel...</div>
+        </main>
 
         <aside class="w-1/3 bg-white shadow-xl flex flex-col">
             <div class="p-4 bg-gray-800 text-white font-bold">PEDIDO ACTUAL</div>
             <div id="cart-items" class="flex-1 overflow-y-auto p-2">
-                </div>
+                <div class="text-center text-gray-400 mt-10">Carrito vacío</div>
+            </div>
             
-            <div class="p-4 border-t border-gray-200">
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
                 <div class="flex justify-between text-2xl font-bold mb-4">
                     <span>TOTAL:</span>
-                    <span id="cart-total">$0</span>
+                    <span id="cart-total" class="text-orange-600">$0</span>
                 </div>
                 
-                <input type="number" id="customer-phone" placeholder="WhatsApp del cliente (ej: 573...)" 
-                       class="w-full p-2 border rounded mb-4 text-lg">
+                <input type="number" id="cust-phone" placeholder="WhatsApp Cliente (ej: 573...)" 
+                       class="w-full p-3 border rounded-lg mb-4 text-lg focus:ring-2 focus:ring-orange-500 outline-none">
 
                 <div class="grid grid-cols-2 gap-2 mb-4">
-                    <button onclick="setPayment('Efectivo')" id="btn-efectivo" class="bg-gray-200 p-3 rounded font-bold">💵 EFECTIVO</button>
-                    <button onclick="setPayment('Nequi')" id="btn-nequi" class="bg-gray-200 p-3 rounded font-bold">📱 NEQUI</button>
+                    <button onclick="setPay('Efectivo')" id="btn-efectivo" class="bg-gray-200 p-3 rounded-lg font-bold transition">💵 EFECTIVO</button>
+                    <button onclick="setPay('Nequi')" id="btn-nequi" class="bg-gray-200 p-3 rounded-lg font-bold transition">📱 NEQUI</button>
                 </div>
 
                 <button onclick="processSale()" id="btn-cobrar"
-                        class="w-full bg-green-600 text-white py-4 rounded-xl text-xl font-bold shadow-lg hover:bg-green-700">
+                        class="w-full bg-green-600 text-white py-4 rounded-xl text-xl font-bold shadow-lg hover:bg-green-700 transition">
                     COBRAR Y ENVIAR
                 </button>
             </div>
         </aside>
     </div>
 
-    <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbzU8-STA8ew-an52ZxxSMkX9KJiSM5RuOQ3w8rOWk0h4hxBTOidqOYFmTusQQHlx98/exec';
-        
-        // Configura tus productos aquí
-        const productos = [
-            { id: 1, name: 'Arepa de Huevo', price: 6000, img: 'https://via.placeholder.com/150?text=Arepa' },
-            { id: 2, name: 'Arepa Mixta', price: 8000, img: 'https://via.placeholder.com/150?text=Mixta' },
-            { id: 3, name: 'Deditos Queso', price: 2500, img: 'https://via.placeholder.com/150?text=Dedito' },
-            { id: 4, name: 'Gaseosa', price: 3500, img: 'https://via.placeholder.com/150?text=Cola' }
-        ];
+    <div id="tab-admin" class="hidden flex-1 overflow-y-auto p-6">
+        <div class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Añadir Nuevo Producto</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                    <input type="text" id="prod-name" placeholder="Ej: Arepa de Huevo Especial" class="w-full p-3 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Precio ($)</label>
+                    <input type="number" id="prod-price" placeholder="6000" class="w-full p-3 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Categoría</label>
+                    <select id="prod-cat" class="w-full p-3 border rounded-lg">
+                        <option value="Arepas">Arepas</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Congelados">Congelados</option>
+                        <option value="Combos">Combos</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Foto (Galería o Cámara)</label>
+                    <input type="file" id="prod-img" accept="image/*" class="w-full p-2 border border-dashed rounded-lg">
+                </div>
+                <button onclick="saveProduct()" id="btn-save-prod" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition mt-4">
+                    GUARDAR EN INVENTARIO
+                </button>
+            </div>
+        </div>
+    </div>
 
+    <script>
+        // TU URL ACTUALIZADA
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzBSZ-acMRbEHwRbT806uUicq-o1rcHHl7HN9q31VFwVwzSdzYDsEzjZjTOpZ6UzkDw/exec';
+        
         let cart = [];
         let paymentMethod = '';
+        let menuProductos = [];
+
+        // Cambio de pestañas
+        function showTab(tab) {
+            document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
+            document.getElementById('tab-admin').classList.toggle('hidden', tab !== 'admin');
+            document.getElementById('nav-ventas').className = tab === 'ventas' ? 'px-2 py-1 active-tab' : 'px-2 py-1';
+            document.getElementById('nav-admin').className = tab === 'admin' ? 'px-2 py-1 active-tab' : 'px-2 py-1';
+            if(tab === 'ventas') loadProducts();
+        }
+
+        // Cargar productos desde Google Sheets
+        async function loadProducts() {
+            try {
+                const res = await fetch(scriptURL);
+                menuProductos = await res.json();
+                renderMenu();
+            } catch (e) {
+                console.error("Error cargando productos", e);
+            }
+        }
 
         function renderMenu() {
             const grid = document.getElementById('menu-grid');
-            grid.innerHTML = productos.map(p => `
-                <div onclick="addToCart(${p.id})" class="product-card bg-white p-2 rounded-lg shadow cursor-pointer hover:shadow-md transition">
-                    <img src="${p.img}" class="w-full h-32 object-cover rounded mb-2">
-                    <div class="font-bold text-gray-800 text-sm">${p.name}</div>
-                    <div class="text-orange-600 font-bold">$${p.price}</div>
+            if(menuProductos.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10">No hay productos. Ve a ADMIN para crear uno.</div>`;
+                return;
+            }
+            grid.innerHTML = menuProductos.map(p => `
+                <div onclick="addToCart('${p.nombre}', ${p.precio})" class="product-card bg-white p-3 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition">
+                    <img src="${p.imagen || 'https://via.placeholder.com/150?text=Kukuruz'}" class="w-full h-32 object-cover rounded-lg mb-2">
+                    <div class="font-bold text-gray-800 text-sm leading-tight h-8 overflow-hidden">${p.nombre}</div>
+                    <div class="text-orange-600 font-black mt-1">$${p.precio}</div>
                 </div>
             `).join('');
         }
 
-        function addToCart(id) {
-            const p = productos.find(x => x.id === id);
-            cart.push(p);
+        // Lógica del Carrito
+        function addToCart(nombre, precio) {
+            cart.push({ nombre, precio });
             updateCart();
         }
 
         function updateCart() {
             const list = document.getElementById('cart-items');
             const totalEl = document.getElementById('cart-total');
+            if(cart.length === 0) {
+                list.innerHTML = `<div class="text-center text-gray-400 mt-10">Carrito vacío</div>`;
+                totalEl.innerText = "$0";
+                return;
+            }
             list.innerHTML = cart.map((item, index) => `
-                <div class="cart-item flex justify-between p-2 text-sm">
-                    <span>${item.name}</span>
-                    <div class="flex items-center gap-2">
-                        <span>$${item.price}</span>
-                        <button onclick="removeItem(${index})" class="text-red-500 font-bold">X</button>
+                <div class="flex justify-between items-center p-2 border-b text-sm">
+                    <span class="font-medium">${item.nombre}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-gray-700">$${item.precio}</span>
+                        <button onclick="removeItem(${index})" class="text-red-500 font-bold bg-red-50 px-2 rounded">✕</button>
                     </div>
                 </div>
             `).join('');
@@ -100,59 +160,95 @@
             updateCart();
         }
 
-        function setPayment(method) {
+        function setPay(method) {
             paymentMethod = method;
-            document.getElementById('btn-efectivo').className = method === 'Efectivo' ? 'bg-orange-500 text-white p-3 rounded font-bold' : 'bg-gray-200 p-3 rounded font-bold';
-            document.getElementById('btn-nequi').className = method === 'Nequi' ? 'bg-orange-500 text-white p-3 rounded font-bold' : 'bg-gray-200 p-3 rounded font-bold';
+            document.getElementById('btn-efectivo').className = method === 'Efectivo' ? 'bg-orange-500 text-white p-3 rounded-lg font-bold' : 'bg-gray-200 p-3 rounded-lg font-bold';
+            document.getElementById('btn-nequi').className = method === 'Nequi' ? 'bg-orange-500 text-white p-3 rounded-lg font-bold' : 'bg-gray-200 p-3 rounded-lg font-bold';
         }
 
+        // Guardar Venta y abrir WhatsApp
         async function processSale() {
-            const phone = document.getElementById('customer-phone').value;
+            const phone = document.getElementById('cust-phone').value;
             const total = cart.reduce((sum, item) => sum + item.price, 0);
             
-            if (cart.length === 0) return alert('¡El carrito está vacío!');
-            if (!paymentMethod) return alert('Elige método de pago');
-            if (!phone) return alert('Pon el WhatsApp del cliente');
+            if (cart.length === 0) return alert('¡Carrito vacío!');
+            if (!paymentMethod) return alert('Elige Efectivo o Nequi');
+            if (!phone) return alert('Ingresa el WhatsApp del cliente');
 
-            const detalle = cart.map(i => i.name).join(', ');
-            
-            document.getElementById('btn-cobrar').innerText = "PROCESANDO...";
+            const detalle = cart.map(i => i.nombre).join(', ');
+            document.getElementById('btn-cobrar').innerText = "REGISTRANDO...";
             document.getElementById('btn-cobrar').disabled = true;
 
             try {
-                // Enviar a Google Sheets
                 await fetch(scriptURL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    cache: 'no-cache',
-                    body: JSON.stringify({
-                        detalle: detalle,
-                        total: total,
-                        pago: paymentMethod,
-                        celular: phone
-                    })
+                    body: JSON.stringify({ detalle, total, pago: paymentMethod, celular: phone })
                 });
 
-                // Abrir WhatsApp
-                const msg = `¡Hola! 🌽 *Kukuruz Gourmet*%0A📍 Codabas Módulo 1%0A--------------------%0A*Pedido:* ${detalle}%0A*Total:* $${total}%0A*Pago:* ${paymentMethod}%0A%0A¡Gracias por tu compra!`;
+                const msg = `¡Hola! 🌽 *Kukuruz Gourmet*%0A--------------------%0A*Pedido:* ${detalle}%0A*Total:* $${total}%0A*Pago:* ${paymentMethod}%0A%0A¡Gracias por tu compra! ✨`;
                 window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${msg}`, '_blank');
                 
-                // Limpiar
                 cart = [];
                 updateCart();
-                document.getElementById('customer-phone').value = '';
-                alert('¡Venta registrada con éxito!');
-                
-            } catch (error) {
-                alert('Error al registrar. Intenta de nuevo.');
+                document.getElementById('cust-phone').value = '';
+                paymentMethod = '';
+                alert('¡Venta exitosa!');
+            } catch (e) {
+                alert('Hubo un error al conectar con el Excel.');
             }
-            
             document.getElementById('btn-cobrar').innerText = "COBRAR Y ENVIAR";
             document.getElementById('btn-cobrar').disabled = false;
         }
 
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
-        renderMenu();
+        // Guardar nuevo producto con Foto
+        async function saveProduct() {
+            const name = document.getElementById('prod-name').value;
+            const price = document.getElementById('prod-price').value;
+            const cat = document.getElementById('prod-cat').value;
+            const fileInput = document.getElementById('prod-img');
+            
+            if(!name || !price) return alert("Nombre y precio son obligatorios");
+
+            let base64 = "";
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                base64 = await new Promise(r => {
+                    reader.onload = () => r(reader.result);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            const btn = document.getElementById('btn-save-prod');
+            btn.innerText = "SUBIENDO A GOOGLE DRIVE...";
+            btn.disabled = true;
+
+            try {
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        accion: "nuevoProducto",
+                        nombre: name,
+                        precio: price,
+                        categoria: cat,
+                        imagenBase64: base64
+                    })
+                });
+                alert("¡Producto guardado en el inventario!");
+                document.getElementById('prod-name').value = '';
+                document.getElementById('prod-price').value = '';
+                document.getElementById('prod-img').value = '';
+                showTab('ventas');
+            } catch (e) {
+                alert("Error al guardar producto");
+            }
+            btn.innerText = "GUARDAR EN INVENTARIO";
+            btn.disabled = false;
+        }
+
+        loadProducts();
     </script>
 </body>
 </html>
