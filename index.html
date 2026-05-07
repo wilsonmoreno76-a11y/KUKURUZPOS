@@ -3,101 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kukuruz POS v4</title>
+    <title>Kukuruz POS - Side Cart</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Grilla inteligente: 3 columnas en cel, hasta 6 en PC */
         .product-grid { 
             display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 10px; 
-        }
-        @media (min-width: 768px) {
-            .product-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+            gap: 12px; 
         }
         .active-tab { background-color: #ea580c !important; color: white !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .scroll-container { overflow-y: auto; height: 100%; padding-bottom: 250px; }
-        .btn-touch:active { transform: scale(0.95); }
+        .scroll-container { overflow-y: auto; height: 100%; }
+        .btn-touch:active { transform: scale(0.96); opacity: 0.9; }
+        
+        /* Layout Responsivo: Lateral en PC/Tablet, Inferior en Celular */
+        .main-layout { display: flex; flex-direction: column; height: 100vh; }
+        @media (min-width: 1024px) {
+            .main-layout { flex-direction: row; }
+            .menu-side { flex: 1; border-right: 2px solid #e5e7eb; }
+            .cart-side { width: 380px; position: relative !important; height: 100vh !important; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-sm">
+<body class="bg-gray-100 overflow-hidden text-sm main-layout">
 
-    <header class="bg-white shadow-md p-2 flex-none z-10">
-        <nav class="flex gap-1 font-bold">
-            <button onclick="showTab('ventas')" id="btn-ventas" class="flex-1 py-3 active-tab bg-gray-100 rounded-xl text-[10px] uppercase">VENTAS</button>
-            <button onclick="showTab('admin')" id="btn-admin" class="flex-1 py-3 bg-gray-100 rounded-xl text-[10px] uppercase">PRODUCTOS</button>
-            <button onclick="showTab('gastos')" id="btn-gastos" class="flex-1 py-3 bg-gray-100 rounded-xl text-[10px] uppercase text-red-600">GASTOS</button>
-            <button onclick="showTab('dash')" id="btn-dash" class="flex-1 py-3 bg-gray-100 rounded-xl text-[10px] uppercase text-green-700">CIERRE</button>
-        </nav>
-    </header>
+    <div class="menu-side flex flex-col flex-1 overflow-hidden">
+        <header class="bg-white shadow-sm p-3 z-10">
+            <nav class="flex gap-2 font-bold">
+                <button onclick="showTab('ventas')" id="btn-ventas" class="flex-1 py-3 active-tab bg-gray-100 rounded-xl text-[10px] uppercase tracking-tighter">VENTAS</button>
+                <button onclick="showTab('admin')" id="btn-admin" class="flex-1 py-3 bg-gray-100 rounded-xl text-[10px] uppercase text-gray-500">PRODUCTOS</button>
+                <button onclick="showTab('gastos')" id="btn-gastos" class="flex-1 py-3 bg-gray-100 rounded-xl text-[10px] uppercase text-red-600">GASTOS</button>
+                <button onclick="showTab('dash')" id="btn-dash" class="flex-1 py-3 bg-gray-100 rounded-xl text-[10px] uppercase text-green-700">CIERRE</button>
+            </nav>
+        </header>
 
-    <div class="flex-1 overflow-hidden">
-        
-        <div id="tab-ventas" class="h-full flex flex-col">
-            <main class="flex-1 p-4 scroll-container bg-gray-50 product-grid" id="menu-grid">
-                </main>
-            
-            <aside class="fixed bottom-0 left-0 w-full bg-white border-t-4 border-orange-500 shadow-[0_-10px_30px_rgba(0,0,0,0.3)] p-4 z-50 rounded-t-3xl">
-                <div id="mini-cart" class="max-h-24 overflow-y-auto mb-3 text-[11px] border-b border-gray-100 pb-2 space-y-1">
-                    <p class="text-gray-400 italic text-center">Orden vacía</p>
-                </div>
+        <div id="tab-ventas" class="flex-1 p-4 scroll-container bg-gray-50 product-grid">
+            </div>
 
-                <div class="flex justify-between items-end mb-3">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] text-gray-400 font-black uppercase">Total a pagar</span>
-                        <span id="cart-total" class="text-4xl font-black text-orange-600 leading-none">$0</span>
-                    </div>
-                    <button onclick="clearCart()" class="bg-red-100 text-red-600 font-bold px-4 py-2 rounded-xl btn-touch">Limpiar</button>
-                </div>
-                
-                <div class="flex gap-2 mb-3">
-                    <input type="number" id="cust-phone" placeholder="WhatsApp Cliente" class="flex-1 p-3 border-2 rounded-2xl text-lg outline-none focus:border-orange-500">
-                    <div class="flex border-2 rounded-2xl overflow-hidden font-black">
-                        <button onclick="setPay('Efectivo')" id="pay-ef" class="px-5 bg-gray-100 border-r-2 btn-touch">EFE</button>
-                        <button onclick="setPay('Nequi')" id="pay-ne" class="px-5 bg-gray-100 btn-touch">NEQ</button>
-                    </div>
-                </div>
-                
-                <button onclick="processSale()" id="btn-cobrar" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-xl shadow-lg btn-touch">
-                    COBRAR Y ENVIAR RECIBO
-                </button>
-            </aside>
-        </div>
-
-        <div id="tab-admin" class="hidden p-4 h-full scroll-container">
-             <div class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow mb-4">
-                <h2 class="font-bold mb-4">AÑADIR PRODUCTO</h2>
-                <input type="text" id="p-name" placeholder="Nombre" class="w-full p-3 border rounded-xl mb-2">
-                <input type="number" id="p-price" placeholder="Precio" class="w-full p-3 border rounded-xl mb-2">
-                <select id="p-cat" class="w-full p-3 border rounded-xl mb-4"><option>Arepas</option><option>Bebidas</option><option>Otros</option></select>
-                <button onclick="saveProduct()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">GUARDAR</button>
+        <div id="tab-admin" class="hidden p-6 scroll-container flex-1">
+             <div class="max-w-md mx-auto bg-white p-6 rounded-3xl shadow-sm border-t-8 border-orange-500 mb-6">
+                <h2 class="font-black mb-4 uppercase">Nuevo Producto</h2>
+                <input type="text" id="p-name" placeholder="Nombre" class="w-full p-4 border-2 rounded-2xl mb-3">
+                <input type="number" id="p-price" placeholder="Precio" class="w-full p-4 border-2 rounded-2xl mb-3">
+                <select id="p-cat" class="w-full p-4 border-2 rounded-2xl mb-5 bg-gray-50">
+                    <option value="Arepas">Arepas</option>
+                    <option value="Bebidas">Bebidas</option>
+                    <option value="Otros">Otros</option>
+                </select>
+                <button onclick="saveProduct()" class="w-full bg-orange-600 text-white py-4 rounded-2xl font-black btn-touch">GUARDAR EN EXCEL</button>
              </div>
              <div id="inventory-list" class="max-w-md mx-auto space-y-2"></div>
         </div>
-        
-        <div id="tab-gastos" class="hidden p-4 h-full scroll-container">
-            <div class="max-w-sm mx-auto bg-white p-6 rounded-2xl shadow">
-                <h2 class="font-bold text-red-600 mb-4 text-center">GASTOS</h2>
-                <input type="text" id="g-con" placeholder="Concepto" class="w-full p-3 border rounded-xl mb-2">
-                <input type="number" id="g-mon" placeholder="Monto" class="w-full p-3 border rounded-xl mb-4">
-                <button onclick="saveGasto()" class="w-full bg-red-500 text-white py-3 rounded-xl font-bold">GUARDAR GASTO</button>
+
+        <div id="tab-gastos" class="hidden p-6 scroll-container flex-1">
+            <div class="max-w-sm mx-auto bg-white p-6 rounded-3xl shadow-lg border-t-8 border-red-500">
+                <h2 class="font-black text-red-600 mb-5 text-center text-xl">REGISTRAR GASTO</h2>
+                <input type="text" id="g-con" placeholder="Concepto" class="w-full p-4 border-2 rounded-2xl mb-3">
+                <input type="number" id="g-mon" placeholder="Monto $" class="w-full p-4 border-2 rounded-2xl mb-5">
+                <button onclick="saveGasto()" class="w-full bg-red-500 text-white py-4 rounded-2xl font-black btn-touch">GUARDAR GASTO</button>
             </div>
         </div>
 
-        <div id="tab-dash" class="hidden p-4 h-full scroll-container text-center">
-            <div class="max-w-sm mx-auto bg-white p-8 rounded-3xl shadow-xl">
-                <h1 class="font-black text-2xl mb-6">CIERRE</h1>
-                <div class="text-left space-y-4 mb-8">
+        <div id="tab-dash" class="hidden p-6 scroll-container flex-1">
+            <div class="max-w-sm mx-auto bg-white p-8 rounded-[40px] shadow-xl border-4 border-orange-100 text-center">
+                <h1 class="font-black text-2xl mb-6 text-orange-600">REPORTE DE CAJA</h1>
+                <div class="text-left space-y-4 mb-8 bg-gray-50 p-6 rounded-3xl">
                     <div class="flex justify-between"><span>Efectivo:</span><span id="res-ef" class="font-bold text-green-600"></span></div>
                     <div class="flex justify-between"><span>Nequi:</span><span id="res-ne" class="font-bold text-blue-600"></span></div>
-                    <div class="flex justify-between border-b pb-2"><span>Gastos:</span><span id="res-gas" class="font-bold text-red-600"></span></div>
-                    <div class="flex justify-between text-2xl font-black text-orange-600"><span>TOTAL:</span><span id="res-total"></span></div>
+                    <div class="flex justify-between border-b pb-3"><span>Gastos:</span><span id="res-gas" class="font-bold text-red-600"></span></div>
+                    <div class="flex justify-between text-2xl font-black text-orange-600 pt-2"><span>TOTAL:</span><span id="res-total"></span></div>
                 </div>
-                <button onclick="sendReport()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-black">ENVIAR A WILSON</button>
+                <button onclick="sendReport()" class="w-full bg-orange-600 text-white py-5 rounded-3xl font-black shadow-lg btn-touch">ENVIAR A WILSON</button>
             </div>
         </div>
     </div>
+
+    <aside class="cart-side fixed bottom-0 left-0 w-full bg-white border-t-4 lg:border-t-0 lg:border-l-4 border-orange-500 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] p-5 z-50 flex flex-col">
+        <h2 class="font-black text-lg mb-4 hidden lg:block uppercase tracking-tighter text-gray-400">Orden Actual</h2>
+        
+        <div id="mini-cart" class="flex-1 overflow-y-auto mb-4 space-y-2 min-h-[100px] lg:min-h-0 border-b lg:border-b-0">
+            <p class="text-gray-400 italic text-center py-4">Selecciona productos...</p>
+        </div>
+
+        <div class="flex justify-between items-end mb-4 border-t pt-4">
+            <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 font-black uppercase">Total a Cobrar</span>
+                <span id="cart-total" class="text-5xl font-black text-orange-600 leading-none tracking-tighter">$0</span>
+            </div>
+            <button onclick="clearCart()" class="text-red-500 font-bold bg-red-50 px-4 py-2 rounded-xl btn-touch">Vaciar</button>
+        </div>
+        
+        <div class="flex gap-2 mb-4">
+            <input type="number" id="cust-phone" placeholder="Celular Cliente" class="flex-1 p-4 border-2 rounded-2xl text-lg font-bold outline-none focus:border-orange-500 bg-gray-50">
+            <div class="flex border-2 rounded-2xl overflow-hidden font-black">
+                <button onclick="setPay('Efectivo')" id="pay-ef" class="px-5 bg-gray-100 border-r-2 btn-touch">EFE</button>
+                <button onclick="setPay('Nequi')" id="pay-ne" class="px-5 bg-gray-100 btn-touch">NEQ</button>
+            </div>
+        </div>
+        
+        <button onclick="processSale()" id="btn-cobrar" class="w-full bg-green-600 text-white py-5 rounded-[24px] font-black text-xl shadow-xl btn-touch uppercase tracking-wide">
+            Registrar Venta
+        </button>
+    </aside>
 
     <script>
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyf6NTKRRKcjKZ5WtJuhLJ5syHwfVwEBwRpdGlnJX-q4o0gr9zEYtYGRf1zGX4NiZKS/exec';
@@ -112,27 +119,29 @@
         };
 
         async function loadData() {
-            const res = await fetch(scriptURL);
-            productosData = await res.json();
-            renderMenu();
-            renderInventory();
+            try {
+                const res = await fetch(scriptURL);
+                productosData = await res.json();
+                renderMenu();
+                renderInventory();
+            } catch(e) { console.error("Error cargando datos"); }
         }
 
         function renderMenu() {
-            document.getElementById('menu-grid').innerHTML = productosData.map(p => {
+            document.getElementById('tab-ventas').innerHTML = productosData.map(p => {
                 const color = colores[p.categoria] || colores['Otros'];
                 return `
-                <div onclick="addToCart('${p.nombre}', ${p.precio})" class="${color} p-4 rounded-2xl border-2 shadow-sm flex flex-col items-center justify-center text-center btn-touch h-24">
-                    <span class="font-black text-[10px] uppercase leading-tight h-8 flex items-center">${p.nombre}</span>
-                    <span class="font-black text-lg">$${p.precio.toLocaleString()}</span>
+                <div onclick="addToCart('${p.nombre}', ${p.precio})" class="${color} p-4 rounded-[24px] border-2 shadow-sm flex flex-col items-center justify-center text-center btn-touch h-28 cursor-pointer">
+                    <span class="font-black text-[10px] uppercase leading-tight h-10 flex items-center">${p.nombre}</span>
+                    <span class="font-black text-xl">$${p.precio.toLocaleString()}</span>
                 </div>`}).join('');
         }
 
         function renderInventory() {
             document.getElementById('inventory-list').innerHTML = productosData.map(p => `
-                <div class="flex justify-between bg-white p-3 rounded-xl shadow-sm items-center">
-                    <span class="font-bold uppercase text-[10px]">${p.nombre}</span>
-                    <button onclick="deleteProduct('${p.nombre}')" class="text-red-500 font-bold">ELIMINAR</button>
+                <div class="flex justify-between bg-white p-4 rounded-2xl shadow-sm items-center border border-gray-100">
+                    <span class="font-bold uppercase text-xs">${p.nombre} - $${p.precio}</span>
+                    <button onclick="deleteProduct('${p.nombre}')" class="text-red-500 font-black text-[10px] bg-red-50 px-3 py-1 rounded-lg">ELIMINAR</button>
                 </div>`).join('');
         }
 
@@ -142,13 +151,25 @@
             const t = cart.reduce((s, i) => s + i.precio, 0);
             document.getElementById('cart-total').innerText = '$' + t.toLocaleString();
             const mini = document.getElementById('mini-cart');
-            mini.innerHTML = cart.length === 0 ? '<p class="text-gray-400 italic text-center">Orden vacía</p>' : 
-                cart.map((i, idx) => `<div class="flex justify-between font-bold uppercase"><span>${i.nombre}</span><span>$${i.precio.toLocaleString()} <button onclick="removeFromCart(${idx})" class="text-red-500 ml-2">✕</button></span></div>`).join('');
-            mini.scrollTop = mini.scrollHeight;
+            
+            if(cart.length === 0) {
+                mini.innerHTML = '<p class="text-gray-400 italic text-center py-4">Selecciona productos...</p>';
+            } else {
+                mini.innerHTML = cart.map((i, idx) => `
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl font-bold uppercase text-[11px] border-l-4 border-orange-400">
+                        <span>${i.nombre}</span>
+                        <div class="flex items-center gap-3">
+                            <span>$${i.precio.toLocaleString()}</span>
+                            <button onclick="removeFromCart(${idx})" class="text-red-500 text-lg">✕</button>
+                        </div>
+                    </div>`).join('');
+                mini.scrollTop = mini.scrollHeight;
+            }
         }
 
         function removeFromCart(idx) { cart.splice(idx, 1); updateCart(); }
         function clearCart() { cart = []; updateCart(); }
+        
         function setPay(m) {
             paymentMethod = m;
             document.getElementById('pay-ef').className = m === 'Efectivo' ? 'px-5 bg-orange-500 text-white font-black border-r-2' : 'px-5 bg-gray-100 font-bold border-r-2';
@@ -158,22 +179,31 @@
         async function processSale() {
             const t = cart.reduce((s, i) => s + i.precio, 0);
             const phone = document.getElementById('cust-phone').value;
-            if(!paymentMethod || cart.length === 0 || !phone) return alert("Faltan datos");
+            if(!paymentMethod || cart.length === 0 || !phone) return alert("Completa: Productos, Pago y Celular");
 
-            let recibo = `¡Hola! 🌽 *KUKURUZ GOURMET*%0A---%0A`;
+            document.getElementById('btn-cobrar').innerText = "REGISTRANDO...";
+            
+            let recibo = `¡Hola! 🌽 *KUKURUZ GOURMET*%0A📍 Codabas Módulo 1%0A---%0A`;
             cart.forEach(item => { recibo += `• ${item.nombre}: $${item.precio.toLocaleString()}%0A`; });
-            recibo += `---%0A💰 *TOTAL:* $${t.toLocaleString()}%0A💳 *PAGO:* ${paymentMethod}%0A%0A¡Gracias! ✨`;
+            recibo += `---%0A💰 *TOTAL:* $${t.toLocaleString()}%0A💳 *PAGO:* ${paymentMethod}%0A%0A¡Muchas gracias por tu compra! ✨`;
 
-            await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ detalle: cart.map(i=>i.nombre).join(','), total: t, pago: paymentMethod, celular: phone })});
-            if(paymentMethod === 'Efectivo') totalEfe += t; else totalNeq += t;
-            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${recibo}`);
-            clearCart(); document.getElementById('cust-phone').value = '';
+            try {
+                await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ detalle: cart.map(i=>i.nombre).join(','), total: t, pago: paymentMethod, celular: phone })});
+                if(paymentMethod === 'Efectivo') totalEfe += t; else totalNeq += t;
+                window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${recibo}`);
+                clearCart(); document.getElementById('cust-phone').value = '';
+                paymentMethod = '';
+                document.getElementById('pay-ef').className = 'px-5 bg-gray-100 font-bold border-r-2';
+                document.getElementById('pay-ne').className = 'px-5 bg-gray-100 font-bold';
+            } catch(e) { alert("Error de red"); }
+            document.getElementById('btn-cobrar').innerText = "REGISTRAR VENTA";
         }
 
         async function saveProduct() {
             const n = document.getElementById('p-name').value;
             const p = document.getElementById('p-price').value;
             const c = document.getElementById('p-cat').value;
+            if(!n || !p) return alert("Faltan datos");
             await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ accion: "nuevoProducto", nombre: n, precio: p, categoria: c })});
             location.reload();
         }
@@ -181,6 +211,7 @@
         async function saveGasto() {
             const m = parseFloat(document.getElementById('g-mon').value);
             const c = document.getElementById('g-con').value;
+            if(!m || !c) return alert("Faltan datos");
             await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ accion: "nuevoGasto", concepto: c, monto: m })});
             totalGas += m; alert("Gasto guardado"); showTab('ventas');
         }
