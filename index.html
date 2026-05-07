@@ -2,253 +2,206 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kukuruz POS - Premium</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kukuruz POS Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-tab { background-color: #ea580c; color: white; border-radius: 8px; }
         .product-card:active { transform: scale(0.95); }
-        .active-tab { border-bottom: 4px solid white; font-weight: bold; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col">
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden text-sm">
 
-    <header class="bg-orange-600 text-white p-4 flex justify-between items-center shadow-lg">
-        <h1 class="text-xl font-bold">🌽 KUKURUZ POS</h1>
-        <nav class="flex gap-4">
-            <button onclick="showTab('ventas')" id="nav-ventas" class="px-2 py-1 active-tab">VENTAS</button>
-            <button onclick="showTab('admin')" id="nav-admin" class="px-2 py-1">ADMIN</button>
+    <header class="bg-white shadow-sm p-2">
+        <div class="flex justify-between items-center mb-2 px-2">
+            <h1 class="font-black text-orange-600 text-lg">🌽 KUKURUZ</h1>
+            <div id="caja-total" class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-bold text-xs">Caja: $0</div>
+        </div>
+        <nav class="flex gap-1 overflow-x-auto no-scrollbar pb-1">
+            <button onclick="showTab('ventas')" id="btn-ventas" class="px-4 py-2 active-tab">VENTAS</button>
+            <button onclick="showTab('admin')" id="btn-admin" class="px-4 py-2">PRODUCTOS</button>
+            <button onclick="showTab('gastos')" id="btn-gastos" class="px-4 py-2">GASTOS</button>
+            <button onclick="showTab('dash')" id="btn-dash" class="px-4 py-2">RESUMEN</button>
         </nav>
     </header>
 
-    <div id="tab-ventas" class="flex flex-1 overflow-hidden">
-        <main class="w-2/3 p-4 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="menu-grid">
-            <div class="col-span-full text-center py-10 text-gray-500">Cargando menú desde el Excel...</div>
-        </main>
-
-        <aside class="w-1/3 bg-white shadow-xl flex flex-col">
-            <div class="p-4 bg-gray-800 text-white font-bold">PEDIDO ACTUAL</div>
-            <div id="cart-items" class="flex-1 overflow-y-auto p-2">
-                <div class="text-center text-gray-400 mt-10">Carrito vacío</div>
+    <div id="tab-ventas" class="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <main class="flex-1 p-2 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2 bg-gray-50" id="menu-grid"></main>
+        
+        <aside class="w-full md:w-80 bg-white border-t md:border-l flex flex-col h-64 md:h-full">
+            <div class="p-2 bg-gray-800 text-white flex justify-between">
+                <span>CARRITO</span>
+                <button onclick="clearCart()" class="text-xs text-red-400">Vaciar</button>
             </div>
-            
-            <div class="p-4 border-t border-gray-200 bg-gray-50">
-                <div class="flex justify-between text-2xl font-bold mb-4">
-                    <span>TOTAL:</span>
-                    <span id="cart-total" class="text-orange-600">$0</span>
+            <div id="cart-items" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+            <div class="p-3 bg-gray-50 border-t">
+                <div class="flex justify-between text-xl font-black text-orange-600 mb-2">
+                    <span>TOTAL</span><span id="cart-total">$0</span>
                 </div>
-                
-                <input type="number" id="cust-phone" placeholder="WhatsApp Cliente (ej: 573...)" 
-                       class="w-full p-3 border rounded-lg mb-4 text-lg focus:ring-2 focus:ring-orange-500 outline-none">
-
-                <div class="grid grid-cols-2 gap-2 mb-4">
-                    <button onclick="setPay('Efectivo')" id="btn-efectivo" class="bg-gray-200 p-3 rounded-lg font-bold transition">💵 EFECTIVO</button>
-                    <button onclick="setPay('Nequi')" id="btn-nequi" class="bg-gray-200 p-3 rounded-lg font-bold transition">📱 NEQUI</button>
+                <input type="number" id="cust-phone" placeholder="WhatsApp (57...)" class="w-full p-2 border rounded-md mb-2">
+                <div class="flex gap-2 mb-2">
+                    <button onclick="setPay('Efectivo')" id="pay-ef" class="flex-1 py-2 rounded bg-gray-200 font-bold text-xs">EFECTIVO</button>
+                    <button onclick="setPay('Nequi')" id="pay-ne" class="flex-1 py-2 rounded bg-gray-200 font-bold text-xs">NEQUI</button>
                 </div>
-
-                <button onclick="processSale()" id="btn-cobrar"
-                        class="w-full bg-green-600 text-white py-4 rounded-xl text-xl font-bold shadow-lg hover:bg-green-700 transition">
-                    COBRAR Y ENVIAR
-                </button>
+                <button onclick="processSale()" id="btn-cobrar" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg">COBRAR</button>
             </div>
         </aside>
     </div>
 
-    <div id="tab-admin" class="hidden flex-1 overflow-y-auto p-6">
-        <div class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Añadir Nuevo Producto</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Nombre</label>
-                    <input type="text" id="prod-name" placeholder="Ej: Arepa de Huevo Especial" class="w-full p-3 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Precio ($)</label>
-                    <input type="number" id="prod-price" placeholder="6000" class="w-full p-3 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Categoría</label>
-                    <select id="prod-cat" class="w-full p-3 border rounded-lg">
-                        <option value="Arepas">Arepas</option>
-                        <option value="Bebidas">Bebidas</option>
-                        <option value="Congelados">Congelados</option>
-                        <option value="Combos">Combos</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Foto (Galería o Cámara)</label>
-                    <input type="file" id="prod-img" accept="image/*" class="w-full p-2 border border-dashed rounded-lg">
-                </div>
-                <button onclick="saveProduct()" id="btn-save-prod" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-700 transition mt-4">
-                    GUARDAR EN INVENTARIO
-                </button>
+    <div id="tab-admin" class="hidden p-4 overflow-y-auto flex-1">
+        <div class="max-w-md mx-auto bg-white p-4 rounded-xl shadow-md">
+            <h2 class="font-bold mb-4 border-b">Nuevo Producto</h2>
+            <div class="space-y-3">
+                <input type="text" id="p-name" placeholder="Nombre" class="w-full p-2 border rounded">
+                <input type="number" id="p-price" placeholder="Precio" class="w-full p-2 border rounded">
+                <select id="p-cat" class="w-full p-2 border rounded">
+                    <option>Arepas</option><option>Bebidas</option><option>Congelados</option>
+                </select>
+                <input type="file" id="p-img" accept="image/*" class="w-full text-xs">
+                <button onclick="saveProduct()" id="btn-p" class="w-full bg-orange-600 text-white py-3 rounded font-bold">GUARDAR EN EXCEL</button>
             </div>
         </div>
     </div>
 
+    <div id="tab-gastos" class="hidden p-4 overflow-y-auto flex-1">
+        <div class="max-w-md mx-auto bg-white p-4 rounded-xl shadow-md">
+            <h2 class="font-bold mb-4 border-b text-red-600">Registrar Gasto</h2>
+            <div class="space-y-3">
+                <input type="text" id="g-con" placeholder="¿En qué se gastó?" class="w-full p-2 border rounded">
+                <input type="number" id="g-mon" placeholder="Monto $" class="w-full p-2 border rounded">
+                <button onclick="saveGasto()" id="btn-g" class="w-full bg-red-500 text-white py-3 rounded font-bold">REGISTRAR GASTO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-dash" class="hidden p-4 overflow-y-auto flex-1">
+        <div id="dash-data" class="max-w-md mx-auto space-y-4 text-center text-lg font-bold">
+            Cargando resumen...
+        </div>
+    </div>
+
     <script>
-        // TU URL ACTUALIZADA
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbzBSZ-acMRbEHwRbT806uUicq-o1rcHHl7HN9q31VFwVwzSdzYDsEzjZjTOpZ6UzkDw/exec';
-        
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbycaD650ZTCPUqzn-lSl1Ns8JzlD9v-SucOg-qeInOMO02hF_QwwYRsiyVDbHa2zF8G/exec';
         let cart = [];
         let paymentMethod = '';
-        let menuProductos = [];
+        let productosData = [];
 
-        // Cambio de pestañas
-        function showTab(tab) {
-            document.getElementById('tab-ventas').classList.toggle('hidden', tab !== 'ventas');
-            document.getElementById('tab-admin').classList.toggle('hidden', tab !== 'admin');
-            document.getElementById('nav-ventas').className = tab === 'ventas' ? 'px-2 py-1 active-tab' : 'px-2 py-1';
-            document.getElementById('nav-admin').className = tab === 'admin' ? 'px-2 py-1 active-tab' : 'px-2 py-1';
-            if(tab === 'ventas') loadProducts();
+        function showTab(t) {
+            ['ventas','admin','gastos','dash'].forEach(id => {
+                document.getElementById('tab-'+id).classList.add('hidden');
+                document.getElementById('btn-'+id).classList.remove('active-tab');
+            });
+            document.getElementById('tab-'+t).classList.remove('hidden');
+            document.getElementById('btn-'+t).classList.add('active-tab');
+            if(t === 'dash') updateDashboard();
         }
 
-        // Cargar productos desde Google Sheets
-        async function loadProducts() {
+        async function loadData() {
             try {
                 const res = await fetch(scriptURL);
-                menuProductos = await res.json();
+                productosData = await res.json();
                 renderMenu();
-            } catch (e) {
-                console.error("Error cargando productos", e);
-            }
+            } catch (e) { alert("Error al cargar datos"); }
         }
 
         function renderMenu() {
             const grid = document.getElementById('menu-grid');
-            if(menuProductos.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-10">No hay productos. Ve a ADMIN para crear uno.</div>`;
-                return;
-            }
-            grid.innerHTML = menuProductos.map(p => `
-                <div onclick="addToCart('${p.nombre}', ${p.precio})" class="product-card bg-white p-3 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition">
-                    <img src="${p.imagen || 'https://via.placeholder.com/150?text=Kukuruz'}" class="w-full h-32 object-cover rounded-lg mb-2">
-                    <div class="font-bold text-gray-800 text-sm leading-tight h-8 overflow-hidden">${p.nombre}</div>
-                    <div class="text-orange-600 font-black mt-1">$${p.precio}</div>
+            grid.innerHTML = productosData.map(p => `
+                <div onclick="addToCart('${p.nombre}', ${p.precio})" class="product-card bg-white p-2 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center">
+                    <img src="${p.imagen || 'https://via.placeholder.com/100'}" class="w-full h-20 object-cover rounded-md mb-1">
+                    <span class="text-[10px] font-bold h-6 overflow-hidden leading-tight">${p.nombre}</span>
+                    <span class="text-orange-600 font-black">$${p.precio}</span>
                 </div>
             `).join('');
         }
 
-        // Lógica del Carrito
-        function addToCart(nombre, precio) {
-            cart.push({ nombre, precio });
+        function addToCart(n, p) {
+            cart.push({nombre: n, precio: parseFloat(p)});
             updateCart();
         }
 
         function updateCart() {
             const list = document.getElementById('cart-items');
-            const totalEl = document.getElementById('cart-total');
-            if(cart.length === 0) {
-                list.innerHTML = `<div class="text-center text-gray-400 mt-10">Carrito vacío</div>`;
-                totalEl.innerText = "$0";
-                return;
-            }
-            list.innerHTML = cart.map((item, index) => `
-                <div class="flex justify-between items-center p-2 border-b text-sm">
-                    <span class="font-medium">${item.nombre}</span>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-gray-700">$${item.precio}</span>
-                        <button onclick="removeItem(${index})" class="text-red-500 font-bold bg-red-50 px-2 rounded">✕</button>
-                    </div>
+            list.innerHTML = cart.map((i, idx) => `
+                <div class="flex justify-between border-b py-1">
+                    <span class="truncate w-32">${i.nombre}</span>
+                    <span>$${i.precio} <button onclick="remove(${idx})" class="text-red-500 ml-1">×</button></span>
                 </div>
             `).join('');
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-            totalEl.innerText = `$${total}`;
+            const total = cart.reduce((s, i) => s + i.precio, 0);
+            document.getElementById('cart-total').innerText = '$' + total;
         }
 
-        function removeItem(index) {
-            cart.splice(index, 1);
-            updateCart();
+        function remove(idx) { cart.splice(idx, 1); updateCart(); }
+        function clearCart() { cart = []; updateCart(); }
+
+        function setPay(m) {
+            paymentMethod = m;
+            document.getElementById('pay-ef').className = m === 'Efectivo' ? 'flex-1 py-2 rounded bg-orange-500 text-white font-bold text-xs' : 'flex-1 py-2 rounded bg-gray-200 font-bold text-xs';
+            document.getElementById('pay-ne').className = m === 'Nequi' ? 'flex-1 py-2 rounded bg-orange-500 text-white font-bold text-xs' : 'flex-1 py-2 rounded bg-gray-200 font-bold text-xs';
         }
 
-        function setPay(method) {
-            paymentMethod = method;
-            document.getElementById('btn-efectivo').className = method === 'Efectivo' ? 'bg-orange-500 text-white p-3 rounded-lg font-bold' : 'bg-gray-200 p-3 rounded-lg font-bold';
-            document.getElementById('btn-nequi').className = method === 'Nequi' ? 'bg-orange-500 text-white p-3 rounded-lg font-bold' : 'bg-gray-200 p-3 rounded-lg font-bold';
-        }
-
-        // Guardar Venta y abrir WhatsApp
         async function processSale() {
             const phone = document.getElementById('cust-phone').value;
-            const total = cart.reduce((sum, item) => sum + item.price, 0);
-            
-            if (cart.length === 0) return alert('¡Carrito vacío!');
-            if (!paymentMethod) return alert('Elige Efectivo o Nequi');
-            if (!phone) return alert('Ingresa el WhatsApp del cliente');
+            const total = cart.reduce((s, i) => s + i.precio, 0);
+            if(cart.length === 0 || !paymentMethod || !phone) return alert("Faltan datos");
 
+            document.getElementById('btn-cobrar').innerText = "PROCESANDO...";
             const detalle = cart.map(i => i.nombre).join(', ');
-            document.getElementById('btn-cobrar').innerText = "REGISTRANDO...";
-            document.getElementById('btn-cobrar').disabled = true;
-
-            try {
-                await fetch(scriptURL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ detalle, total, pago: paymentMethod, celular: phone })
-                });
-
-                const msg = `¡Hola! 🌽 *Kukuruz Gourmet*%0A--------------------%0A*Pedido:* ${detalle}%0A*Total:* $${total}%0A*Pago:* ${paymentMethod}%0A%0A¡Gracias por tu compra! ✨`;
-                window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${msg}`, '_blank');
-                
-                cart = [];
-                updateCart();
-                document.getElementById('cust-phone').value = '';
-                paymentMethod = '';
-                alert('¡Venta exitosa!');
-            } catch (e) {
-                alert('Hubo un error al conectar con el Excel.');
-            }
-            document.getElementById('btn-cobrar').innerText = "COBRAR Y ENVIAR";
-            document.getElementById('btn-cobrar').disabled = false;
-        }
-
-        // Guardar nuevo producto con Foto
-        async function saveProduct() {
-            const name = document.getElementById('prod-name').value;
-            const price = document.getElementById('prod-price').value;
-            const cat = document.getElementById('prod-cat').value;
-            const fileInput = document.getElementById('prod-img');
             
-            if(!name || !price) return alert("Nombre y precio son obligatorios");
+            await fetch(scriptURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ detalle, total, pago: paymentMethod, celular: phone })
+            });
 
-            let base64 = "";
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                base64 = await new Promise(r => {
-                    reader.onload = () => r(reader.result);
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            const btn = document.getElementById('btn-save-prod');
-            btn.innerText = "SUBIENDO A GOOGLE DRIVE...";
-            btn.disabled = true;
-
-            try {
-                await fetch(scriptURL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({
-                        accion: "nuevoProducto",
-                        nombre: name,
-                        precio: price,
-                        categoria: cat,
-                        imagenBase64: base64
-                    })
-                });
-                alert("¡Producto guardado en el inventario!");
-                document.getElementById('prod-name').value = '';
-                document.getElementById('prod-price').value = '';
-                document.getElementById('prod-img').value = '';
-                showTab('ventas');
-            } catch (e) {
-                alert("Error al guardar producto");
-            }
-            btn.innerText = "GUARDAR EN INVENTARIO";
-            btn.disabled = false;
+            const msg = `¡Hola! 🌽 *Kukuruz Gourmet*%0A*Pedido:* ${detalle}%0A*Total:* $${total}%0A*Pago:* ${paymentMethod}`;
+            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${msg}`);
+            
+            clearCart();
+            document.getElementById('btn-cobrar').innerText = "COBRAR";
+            alert("¡Venta registrada!");
         }
 
-        loadProducts();
+        async function saveProduct() {
+            const n = document.getElementById('p-name').value;
+            const p = document.getElementById('p-price').value;
+            const c = document.getElementById('p-cat').value;
+            const file = document.getElementById('p-img').files[0];
+            if(!n || !p) return alert("Completa nombre y precio");
+
+            let b64 = "";
+            if(file) {
+                const reader = new FileReader();
+                b64 = await new Promise(r => { reader.onload = () => r(reader.result); reader.readAsDataURL(file); });
+            }
+
+            document.getElementById('btn-p').innerText = "ENVIANDO...";
+            await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ accion: "nuevoProducto", nombre: n, precio: p, categoria: c, imagenBase64: b64 })});
+            location.reload();
+        }
+
+        async function saveGasto() {
+            const con = document.getElementById('g-con').value;
+            const mon = document.getElementById('g-mon').value;
+            if(!con || !mon) return alert("Completa los datos");
+
+            document.getElementById('btn-g').innerText = "GUARDANDO...";
+            await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ accion: "nuevoGasto", concepto: con, monto: mon })});
+            alert("Gasto anotado");
+            location.reload();
+        }
+
+        // Esta parte es manual por ahora, sumará lo que hay en el Excel si lo configuras
+        function updateDashboard() {
+            document.getElementById('dash-data').innerHTML = `
+                <div class="bg-blue-100 p-4 rounded text-blue-800">Caja de hoy se calcula en tu Excel</div>
+                <div class="text-sm text-gray-500">Revisa tu pestaña "RESUMEN" en Google Sheets para el balance exacto de Efectivo vs Nequi.</div>
+            `;
+        }
+
+        loadData();
     </script>
 </body>
 </html>
