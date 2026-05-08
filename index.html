@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#ea580c">
-    <link rel="manifest" href="manifest.json"> <title>Kukuruz POS v12.5 - PWA Ready</title>
+    <link rel="manifest" href="manifest.json"> 
+    <title>Kukuruz POS v12.6 - Categorías Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { box-sizing: border-box; touch-action: manipulation; }
@@ -29,8 +29,6 @@
         input:checked + .slider:before { transform: translateX(20px); }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Botón Fullscreen mejorado */
         #fs-btn { position: absolute; top: 12px; left: 10px; z-index: 50; }
     </style>
 </head>
@@ -65,12 +63,14 @@
                 <select id="p-cat" class="w-full p-2 border-2 rounded-xl mb-3 font-bold">
                     <option>Arepas</option>
                     <option>Empanadas</option>
+                    <option>Dedos Queso</option>
                     <option>Bebidas</option>
+                    <option>Congelados</option>
                     <option>Otros</option>
                 </select>
                 <button onclick="saveProduct()" id="btn-add-prod" class="w-full bg-orange-600 text-white py-3 rounded-xl font-black btn-touch uppercase">Guardar</button>
             </div>
-            <div class="max-w-xs mx-auto mt-4 space-y-2" id="lista-borrar"></div>
+            <div class="max-w-xs mx-auto mt-4 space-y-2 pb-10" id="lista-borrar"></div>
         </div>
 
         <div id="tab-gastos" class="hidden scroll-area-products">
@@ -81,7 +81,6 @@
                 <button onclick="saveGasto()" id="btn-save-gasto" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black uppercase">Registrar Gasto</button>
             </div>
         </div>
-
         <div id="tab-dash" class="hidden scroll-area-products text-center">
             <div id="resumen-caja-cont" class="max-w-xs mx-auto bg-white p-6 rounded-3xl border-2 shadow-xl mt-4"></div>
         </div>
@@ -121,12 +120,12 @@
         let totalEfe = 0, totalNeq = 0, totalGas = 0;
         let productosData = [];
         let categoriaActiva = 'Todas';
+        // Categorías fijas solicitadas
+        const categoriasFijas = ['Todas', 'Arepas', 'Empanadas', 'Dedos Queso', 'Bebidas', 'Congelados', 'Otros'];
 
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error: ${err.message}`);
-                });
+                document.documentElement.requestFullscreen().catch(err => console.log(err.message));
             } else {
                 document.exitFullscreen();
             }
@@ -138,17 +137,16 @@
                 productosData = await res.json(); 
                 renderMenu(); 
                 renderListaAdmin();
-            } catch(e) {}
+            } catch(e) { console.log("Error de carga"); }
         }
 
         function renderMenu() {
-            const categoriasUnicas = ['Todas', ...new Set(productosData.map(p => p.categoria || 'Otros'))];
-            document.getElementById('cat-nav').innerHTML = categoriasUnicas.map(c => `
+            document.getElementById('cat-nav').innerHTML = categoriasFijas.map(c => `
                 <button onclick="filtrarPorCategoria('${c}')" class="px-4 py-2 rounded-xl font-black text-[10px] uppercase whitespace-nowrap transition-colors ${categoriaActiva === c ? 'bg-orange-600 text-white shadow-md' : 'bg-white text-gray-500 border-2 border-gray-200'}">${c}</button>
             `).join('');
 
             const productosFiltrados = categoriaActiva === 'Todas' ? productosData : productosData.filter(p => p.categoria === categoriaActiva);
-            const colores = { 'Arepas': 'bg-amber-100 border-amber-300 text-amber-900', 'Empanadas': 'bg-yellow-100 border-yellow-300 text-yellow-900', 'Bebidas': 'bg-sky-100 border-sky-300 text-sky-900', 'Otros': 'bg-gray-100 border-gray-300 text-gray-900' };
+            const colores = { 'Arepas': 'bg-amber-100 border-amber-300', 'Empanadas': 'bg-yellow-100 border-yellow-300', 'Dedos Queso': 'bg-orange-100 border-orange-300', 'Bebidas': 'bg-sky-100 border-sky-300', 'Congelados': 'bg-blue-100 border-blue-300', 'Otros': 'bg-gray-100 border-gray-300' };
             
             document.getElementById('grid-contenedor').innerHTML = productosFiltrados.map(p => `
                 <div onclick="addToCart('${p.nombre}', ${p.precio})" class="${colores[p.categoria] || colores['Otros']} prod-btn btn-touch shadow-sm">
@@ -174,7 +172,11 @@
             if(!n || !p) return alert("Completa los datos");
             try {
                 await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ accion: "nuevoProducto", nombre: n, precio: p, categoria: c })});
-                location.reload();
+                // Actualizar localmente para evitar recarga lenta
+                productosData.push({nombre: n, precio: parseFloat(p), categoria: c});
+                renderMenu(); renderListaAdmin();
+                document.getElementById('p-name').value = ''; document.getElementById('p-price').value = '';
+                alert("Producto Guardado");
             } catch(e) { alert("Error"); }
         }
 
@@ -182,12 +184,14 @@
             if(!confirm(`¿Borrar "${nombre}" del menú?`)) return;
             try {
                 await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ accion: "eliminarProducto", nombre: nombre })});
-                location.reload();
+                // Eliminar localmente para efecto inmediato
+                productosData = productosData.filter(p => p.nombre !== nombre);
+                renderMenu(); renderListaAdmin();
             } catch(e) { alert("Error al eliminar"); }
         }
 
+        // --- Lógica de Venta, Gastos y Cierre (Se mantiene intacta) ---
         function addToCart(n, p) { cart.push({nombre: n, precio: parseFloat(p)}); updateCart(); }
-        
         function updateCart() {
             const t = cart.reduce((s, i) => s + i.precio, 0);
             document.getElementById('cart-total').innerText = '$' + t.toLocaleString();
@@ -199,13 +203,11 @@
                 </div>`).join('');
             mini.scrollTop = mini.scrollHeight;
         }
-
         function setPay(m) {
             paymentMethod = m;
             document.getElementById('pay-ef').className = m === 'Efectivo' ? 'flex-1 py-3 bg-orange-500 text-white rounded-xl border-b-4 border-orange-700' : 'flex-1 py-3 bg-gray-100 rounded-xl border-b-4 border-gray-300';
             document.getElementById('pay-ne').className = m === 'Nequi' ? 'flex-1 py-3 bg-orange-500 text-white rounded-xl border-b-4 border-orange-700' : 'flex-1 py-3 bg-gray-100 rounded-xl border-b-4 border-gray-300';
         }
-
         async function processSale() {
             const t = cart.reduce((s, i) => s + i.precio, 0);
             const phone = document.getElementById('cust-phone').value;
@@ -218,7 +220,6 @@
                 clearCart(); document.getElementById('cust-phone').value = ''; paymentMethod = ''; renderCierre();
             } catch(e) {}
         }
-
         async function saveGasto() {
             const d = document.getElementById('g-desc').value;
             const m = parseFloat(document.getElementById('g-monto').value);
@@ -226,7 +227,6 @@
             await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ accion: "nuevoGasto", descripcion: d, monto: m })});
             totalGas += m; document.getElementById('g-desc').value = ''; document.getElementById('g-monto').value = ''; alert("Gasto registrado");
         }
-
         function renderCierre() {
             const neto = (totalEfe + totalNeq) - totalGas;
             document.getElementById('resumen-caja-cont').innerHTML = `
@@ -240,13 +240,11 @@
                 <button onclick="enviarCierreWS()" class="mt-6 w-full py-4 bg-green-500 text-white rounded-xl font-black uppercase shadow-lg">Enviar Reporte WhatsApp</button>
             `;
         }
-
         function enviarCierreWS() {
             const neto = (totalEfe + totalNeq) - totalGas;
             const texto = `💰%20*CIERRE%20KUKURUZ%20GOURMET*%0A---%0A💵%20Efectivo:%20$${totalEfe}%0A📱%20Nequi:%20$${totalNeq}%0A💸%20Gastos:%20$${totalGas}%0A📊%20*TOTAL%20NETO:%20$${neto}*`;
             window.open(`https://api.whatsapp.com/send?phone=573193490940&text=${texto}`);
         }
-
         function showTab(t) {
             ['ventas','admin','gastos','dash'].forEach(id => {
                 document.getElementById('tab-'+id).classList.add('hidden');
@@ -256,7 +254,6 @@
             document.getElementById('btn-'+t).classList.add('active-tab');
             if(t === 'dash') renderCierre();
         }
-
         function clearCart() { cart = []; updateCart(); }
         function removeFromCart(idx) { cart.splice(idx, 1); updateCart(); }
         loadData();
