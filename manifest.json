@@ -1,0 +1,16 @@
+{
+  "name": "Kukuruz Gourmet POS",
+  "short_name": "Kukuruz POS",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/8066/8066270.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
